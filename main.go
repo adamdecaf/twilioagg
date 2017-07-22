@@ -30,6 +30,8 @@ func main() {
 func startHttpServer(port int) error {
 	// register handlers
 	http.HandleFunc("/ping", routes.Ping)
+	http.HandleFunc("/sms", routes.IncomingSMS)
+	http.HandleFunc("/voice", routes.IncomingVoice)
 
 	listen := fmt.Sprintf(":%d", port)
 	err := http.ListenAndServe(listen, nil)
