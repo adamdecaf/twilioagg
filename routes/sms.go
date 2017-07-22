@@ -7,11 +7,10 @@ import (
 	"log"
 
 	"github.com/adamdecaf/twilioagg/phone"
+	"github.com/adamdecaf/twilioagg/proxy"
 )
 
 func IncomingSMS(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "sms")
-
 	err := r.ParseForm()
 	if err != nil {
 		log.Printf("error parsing form - %s", err)
@@ -20,7 +19,7 @@ func IncomingSMS(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sms := parseSMS(r.PostForm)
-	fmt.Println(sms)
+	proxy.HandleSMS(sms)
 }
 
 func parseSMS(v url.Values) phone.SMS {
