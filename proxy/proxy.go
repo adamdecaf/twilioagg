@@ -36,6 +36,11 @@ func HandleSMS(sms phone.SMS) {
 	// send the response back out.
 	if sms.From.Number == privateSMSNumber {
 		to, body := parseToNumberFromBody(sms.Body)
+		if to == "" || body == "" {
+			log.Printf("invalid message from [private] to %s", sms.To.Number)
+			return
+		}
+
 		log.Printf("reply from [private] to %s", to)
 
 		// Send the actual sms from the number we replied to
@@ -66,8 +71,16 @@ func HandleSMS(sms phone.SMS) {
 
 // Parse a body like:
 // 123-456-7890 what's up world?
+// into
+// to: +11234567890
+// body: what's up world?
 func parseToNumberFromBody(b string) (to, body string) {
 	parts := strings.SplitN(b, " ", 2)
+
+	if len(parts) == 1 {
+		return "", ""
+	}
+
 	to = parts[0]
 	body = strings.Join(parts[1:], "")
 
