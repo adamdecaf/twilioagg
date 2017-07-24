@@ -47,11 +47,3 @@ hi mom!
   - Forward along to an email or diff phone number
   - Respond from private number back out with correct public number
 
-### TODO / Future
-
-- blocking incoming numbers
-- alert the private number on incoming calls
-- record incoming calls to fs, db, etc
-- buy phone numbers from twilio
-  - find easy to type numbers (based on some distance metric off the T9 keyboard...?)
-  - cycle public numbers
