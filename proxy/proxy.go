@@ -69,6 +69,20 @@ func HandleSMS(sms phone.SMS) {
 	return
 }
 
+// HandleVoice currently sends an sms to the private number telling
+// which number is calling and what public number was called
+func HandleVoice(voice phone.Voice) {
+	// Send a text from the number that's being called
+	from := voice.To.Number
+	to := privateSMSNumber
+	details :=  fmt.Sprintf("Name: %s\nNumber: %s\nAddress: %s", voice.Name, voice.From.Number, voice.From.String())
+	body := fmt.Sprintf("Incoming voice from %s, details:\n %s", voice.From.Number, details)
+	err := sendSMS(from, to, body)
+	if err != nil {
+		log.Println(err)
+	}
+}
+
 // Parse a body like:
 // 123-456-7890 what's up world?
 // into

@@ -7,11 +7,10 @@ import (
 	"log"
 
 	"github.com/adamdecaf/twilioagg/phone"
+	"github.com/adamdecaf/twilioagg/proxy"
 )
 
 func IncomingVoice(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "voice\n")
-
 	err := r.ParseForm()
 	if err != nil {
 		log.Printf("error parsing form - %s", err)
@@ -20,7 +19,7 @@ func IncomingVoice(w http.ResponseWriter, r *http.Request) {
 	}
 
 	voice := parseVoice(r.PostForm)
-	fmt.Println(voice)
+	proxy.HandleVoice(voice)
 }
 
 func parseVoice(v url.Values) phone.Voice {
