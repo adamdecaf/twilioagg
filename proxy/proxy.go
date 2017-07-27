@@ -3,8 +3,10 @@ package proxy
 import (
 	"fmt"
 	"log"
-	"strings"
 	"os"
+	"strings"
+	"sync"
+	"time"
 
 	"github.com/adamdecaf/twilioagg/phone"
 )
@@ -15,12 +17,22 @@ const (
 
 var (
 	privateSMSNumber = os.Getenv("TWILIOAGG_PRIVATE_NUMBER")
+
+	// ttl cache for voice calls
+	// Some callers seem to be calling rapidly in a short burst,
+	// which is probably due to the quick response/cancel from twilio.
+	voiceTTLCache = sync.Map{}
+	voiceTTLThreshold = 30 * time.Second
+	voiceTTLTimestampFormat = time.UnixDate
+	voiceTTLCacheCleanInterval = 10 * time.Second
 )
 
 func init() {
 	if privateSMSNumber == "" {
 		log.Fatalf("error - no TWILIOAGG_PRIVATE_NUMBER specified")
 	}
+
+	initCacheCleaning()
 }
 
 // HandleSMS works to proxy incoming and outgoing sms messages across multiple public
@@ -69,17 +81,60 @@ func HandleSMS(sms phone.SMS) {
 	return
 }
 
+func getTTL() string {
+	return time.Now().UTC().Add(voiceTTLThreshold).Format(voiceTTLTimestampFormat)
+}
+
+func ttlToOld(ttl string) bool {
+	t, err := time.Parse(voiceTTLTimestampFormat, ttl)
+	if err != nil {
+		log.Printf("error parsing ttl from cache - %s\n", err)
+		return false
+	}
+	return time.Now().After(t)
+}
+
+func initCacheCleaning() {
+	clean := func() {
+		for _ = range time.Tick(voiceTTLCacheCleanInterval) {
+			voiceTTLCache.Range(func (k, v interface{}) bool {
+				ttl, ok := v.(string)
+				if ok && ttlToOld(ttl) {
+					voiceTTLCache.Delete(k)
+				}
+				return true
+			})
+		}
+	}
+	go clean()
+}
+
 // HandleVoice currently sends an sms to the private number telling
 // which number is calling and what public number was called
 func HandleVoice(voice phone.Voice) {
-	// Send a text from the number that's being called
-	from := voice.To.Number
-	to := privateSMSNumber
-	details :=  fmt.Sprintf("Name: %s\nNumber: %s\nAddress: %s", voice.Name, voice.From.Number, voice.From.String())
-	body := fmt.Sprintf("Incoming voice from %s, details:\n %s", voice.From.Number, details)
-	err := sendSMS(from, to, body)
-	if err != nil {
-		log.Println(err)
+	from := voice.From.Number
+
+	// Check if the number is in the voice ttl cache
+	when := getTTL()
+	v, exists := voiceTTLCache.LoadOrStore(from, when)
+	ttl, ok := v.(string)
+	if !ok {
+		log.Printf("error casting ttl as string")
+		return
+	}
+
+	// check the ttl, if it's too old (or no ttl existed) then send the sms
+	if !exists || ttlToOld(ttl) {
+		// send sms
+		to := privateSMSNumber
+		details :=  fmt.Sprintf("Name: %s\nNumber: %s\nAddress: %s", voice.Name, voice.From.Number, voice.From.String())
+		body := fmt.Sprintf("Incoming voice from %s, details:\n %s", voice.From.Number, details)
+		err := sendSMS(voice.To.Number, to, body)
+		if err != nil {
+			log.Println(err)
+		}
+	} else {
+		log.Printf("not sending sms for voice req from %s\n", from)
 	}
 }
 
