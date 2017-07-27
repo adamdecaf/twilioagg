@@ -19,6 +19,7 @@ func IncomingSMS(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sms := parseSMS(r.PostForm)
+	log.Printf("incoming sms http webhook from %s\n", sms.From.Number)
 	proxy.HandleSMS(sms)
 }
 
