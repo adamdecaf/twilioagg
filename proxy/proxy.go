@@ -48,7 +48,7 @@ func HandleSMS(sms phone.SMS) {
 	// send the response back out.
 	if sms.From.Number == privateSMSNumber {
 		to, body := parseToNumberFromBody(sms.Body)
-		if to == "" || body == "" {
+		if to == "" || (body == "" && len(sms.MediaUrls) == 0) {
 			log.Printf("invalid message from [private] to %s", sms.To.Number)
 			return
 		}
@@ -56,7 +56,7 @@ func HandleSMS(sms phone.SMS) {
 		log.Printf("reply from [private] to %s", to)
 
 		// Send the actual sms from the number we replied to
-		err := sendSMS(sms.To.Number, to, body)
+		err := sendSMS(sms.To.Number, to, body, sms.MediaUrls)
 		if err != nil {
 			log.Println(err)
 		}
@@ -66,13 +66,29 @@ func HandleSMS(sms phone.SMS) {
 	// Otherwise, proxy incoming sms over to our private number
 	from := sms.From.Number
 	to := sms.To.Number
-	msg := []rune(fmt.Sprintf("SMS from %s - \n%s", sms.From, sms.Body))
+
+	var msg []rune
+	var tpe string
+	if len(sms.MediaUrls) > 0 {
+		tpe = "MMS"
+	} else {
+		tpe = "SMS"
+	}
+
+	if strings.TrimSpace(sms.Body) == "" {
+		msg = []rune(fmt.Sprintf("%s from %s\n", tpe, sms.From))
+	} else {
+		msg = []rune(fmt.Sprintf("%s from %s - \n%s", tpe, sms.From, sms.Body))
+	}
+
 	msgs := split(msg, smsMaxLength)
+
 	log.Printf("incoming sms from %s to %s", from, to)
+
 	for i := range msgs {
 		log.Printf("sending part %d/%d", i+1, len(msgs))
 		// Send the actual sms from a number we own
-		err := sendSMS(to, privateSMSNumber, string(msgs[i]))
+		err := sendSMS(to, privateSMSNumber, string(msgs[i]), sms.MediaUrls)
 		if err != nil {
 			log.Println(err)
 		}
@@ -129,7 +145,7 @@ func HandleVoice(voice phone.Voice) {
 		to := privateSMSNumber
 		details :=  fmt.Sprintf("Name: %s\nNumber: %s\nAddress: %s", voice.Name, voice.From.Number, voice.From.String())
 		body := fmt.Sprintf("Incoming voice from %s, details:\n %s", voice.From.Number, details)
-		err := sendSMS(voice.To.Number, to, body)
+		err := sendSMS(voice.To.Number, to, body, nil)
 		if err != nil {
 			log.Println(err)
 		}
@@ -146,8 +162,10 @@ func HandleVoice(voice phone.Voice) {
 func parseToNumberFromBody(b string) (to, body string) {
 	parts := strings.SplitN(b, " ", 2)
 
+	// return the first part in case of MMS messages
+	// where there's no additional message to be sent
 	if len(parts) == 1 {
-		return "", ""
+		return parts[0], ""
 	}
 
 	to = parts[0]

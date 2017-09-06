@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/url"
 	"log"
+	"strconv"
 
 	"github.com/adamdecaf/twilioagg/phone"
 	"github.com/adamdecaf/twilioagg/proxy"
@@ -41,6 +42,17 @@ func parseSMS(v url.Values) phone.SMS {
 	sms.To.Country = v.Get("ToCountry")
 	sms.To.State = v.Get("ToState")
 	sms.To.Zip = v.Get("ToZip")
+
+	// Pull out each "MediaUrl%d" param
+	n, err := strconv.Atoi(v.Get("NumMedia"))
+	if err == nil && n > 0 {
+		urls := make([]string, 0)
+		for i := 0; i < n; i++ {
+			u := v.Get(fmt.Sprintf("MediaUrl%d", i))
+			urls = append(urls, u)
+		}
+		sms.MediaUrls = urls
+	}
 
 	return sms
 }

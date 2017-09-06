@@ -24,5 +24,5 @@ type SMS struct {
 	Body string
 	From Subject
 	To Subject
-	// TODO(adam) NumMedia - [0]
+	MediaUrls []string
 }
