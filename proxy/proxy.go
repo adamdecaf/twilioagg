@@ -87,8 +87,17 @@ func HandleSMS(sms phone.SMS) {
 
 	for i := range msgs {
 		log.Printf("sending part %d/%d", i+1, len(msgs))
+
+		// Only add the MMS attachment onto the first message
+		murls := make([]string, 0)
+		if i == 0 {
+			murls = sms.MediaUrls
+		} else {
+			murls = nil
+		}
+
 		// Send the actual sms from a number we own
-		err := sendSMS(to, privateSMSNumber, string(msgs[i]), sms.MediaUrls)
+		err := sendSMS(to, privateSMSNumber, string(msgs[i]), murls)
 		if err != nil {
 			log.Println(err)
 		}
