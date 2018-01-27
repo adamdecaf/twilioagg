@@ -1,3 +1,5 @@
+VERSION := "0.1.0-dev"
+
 .PHONY: build test vet
 
 build:
@@ -15,3 +17,9 @@ deps:
 	dep ensure
 
 ci: test
+
+docker: build
+	docker build -t adamdecaf/twilioagg:$(VERSION) .
+
+dockerpush: docker
+	docker push adamdecaf/twilioagg:$(VERSION)
