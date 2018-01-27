@@ -1,9 +1,9 @@
 package proxy
 
 import (
+	gotwilio "github.com/sfreiberg/gotwilio"
 	"log"
 	"os"
-	gotwilio "github.com/sfreiberg/gotwilio"
 )
 
 var (

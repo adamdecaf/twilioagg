@@ -20,9 +20,9 @@ package phone
 // ToZip - [97754]
 
 type SMS struct {
-	Id string    // MessageSid, SmsSid, SmsMessageSid
-	Body string
-	From Subject
-	To Subject
+	Id        string // MessageSid, SmsSid, SmsMessageSid
+	Body      string
+	From      Subject
+	To        Subject
 	MediaUrls []string
 }

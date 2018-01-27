@@ -27,8 +27,8 @@ package phone
 // ToZip - [97754]
 
 type Voice struct {
-	Id string
+	Id   string
 	Name string
 	From Subject
-	To Subject
+	To   Subject
 }

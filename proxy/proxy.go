@@ -21,9 +21,9 @@ var (
 	// ttl cache for voice calls
 	// Some callers seem to be calling rapidly in a short burst,
 	// which is probably due to the quick response/cancel from twilio.
-	voiceTTLCache = sync.Map{}
-	voiceTTLThreshold = 30 * time.Second
-	voiceTTLTimestampFormat = time.UnixDate
+	voiceTTLCache              = sync.Map{}
+	voiceTTLThreshold          = 30 * time.Second
+	voiceTTLTimestampFormat    = time.UnixDate
 	voiceTTLCacheCleanInterval = 10 * time.Second
 )
 
@@ -122,7 +122,7 @@ func ttlToOld(ttl string) bool {
 func initCacheCleaning() {
 	clean := func() {
 		for _ = range time.Tick(voiceTTLCacheCleanInterval) {
-			voiceTTLCache.Range(func (k, v interface{}) bool {
+			voiceTTLCache.Range(func(k, v interface{}) bool {
 				ttl, ok := v.(string)
 				if ok && ttlToOld(ttl) {
 					voiceTTLCache.Delete(k)
@@ -152,7 +152,7 @@ func HandleVoice(voice phone.Voice) {
 	if !exists || ttlToOld(ttl) {
 		// send sms
 		to := privateSMSNumber
-		details :=  fmt.Sprintf("Name: %s\nNumber: %s\nAddress: %s", voice.Name, voice.From.Number, voice.From.String())
+		details := fmt.Sprintf("Name: %s\nNumber: %s\nAddress: %s", voice.Name, voice.From.Number, voice.From.String())
 		body := fmt.Sprintf("Incoming voice from %s, details:\n %s", voice.From.Number, details)
 		err := sendSMS(voice.To.Number, to, body, nil)
 		if err != nil {

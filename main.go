@@ -3,8 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
-	"net/http"
 	"log"
+	"net/http"
 
 	"github.com/adamdecaf/twilioagg/routes"
 )

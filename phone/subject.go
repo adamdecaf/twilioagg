@@ -5,9 +5,10 @@ import (
 )
 
 type Subject struct {
-	Number string
+	Number                    string
 	City, Country, State, Zip string
 }
+
 func (s Subject) String() string {
 	citystate := s.State
 	if s.City != "" {
