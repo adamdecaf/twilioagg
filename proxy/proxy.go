@@ -22,9 +22,9 @@ var (
 	// Some callers seem to be calling rapidly in a short burst,
 	// which is probably due to the quick response/cancel from twilio.
 	voiceTTLCache              = sync.Map{}
-	voiceTTLThreshold          = 30 * time.Second
+	voiceTTLThreshold          = 30 * time.Minute
 	voiceTTLTimestampFormat    = time.UnixDate
-	voiceTTLCacheCleanInterval = 10 * time.Second
+	voiceTTLCacheCleanInterval = 1 * time.Minute
 )
 
 func init() {
@@ -67,14 +67,14 @@ func HandleSMS(sms phone.SMS) {
 	from := sms.From.Number
 	to := sms.To.Number
 
-	var msg []rune
-	var tpe string
+	// If we've recently seen this number just ignore it
+
+	tpe := "SMS"
 	if len(sms.MediaUrls) > 0 {
 		tpe = "MMS"
-	} else {
-		tpe = "SMS"
 	}
 
+	var msg []rune
 	if strings.TrimSpace(sms.Body) == "" {
 		msg = []rune(fmt.Sprintf("%s from %s\n", tpe, sms.From))
 	} else {
